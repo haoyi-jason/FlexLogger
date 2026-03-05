@@ -24,7 +24,7 @@
 ### Response Stream (FPGA → MCU)
 
 After sending the command frame, the MCU clocks dummy bytes to receive the
-response.  The FPGA pushes response bytes into an 8-entry async FIFO
+response.  The FPGA pushes response bytes into a 32-entry async FIFO
 (`resp_fifo`).  The SPI slave drives `MISO = 0x00` when the FIFO is empty.
 The MCU should clock as many bytes as defined for each command (see table).
 
@@ -42,14 +42,14 @@ Returns 16 bytes of system status.
 
 | Byte  | Content                          |
 |-------|----------------------------------|
-| 0–1   | `adc_pending` (uint16, big-endian) |
-| 2–3   | `adc_rd_idx`  (uint16)           |
-| 4–5   | `adc_wr_idx`  (uint16)           |
-| 6–7   | `adc_overflow` (uint16)          |
-| 8–9   | `imu_pending` (uint16)           |
-| 10–11 | `imu_rd_idx`  (uint16)           |
-| 12–13 | `imu_wr_idx`  (uint16)           |
-| 14–15 | `imu_overflow` (uint16)          |
+| 0–1   | `adc_pending` (uint11, big-endian; byte[0]=bits[10:8], byte[1]=bits[7:0]) |
+| 2–3   | `adc_rd_idx`  (uint10, big-endian; byte[2]=bits[9:8], byte[3]=bits[7:0]) |
+| 4–5   | `adc_wr_idx`  (uint10, big-endian)                                        |
+| 6–7   | `adc_overflow` (uint16, big-endian)                                       |
+| 8–9   | `imu_pending` (uint11, big-endian)                                        |
+| 10–11 | `imu_rd_idx`  (uint10, big-endian)                                        |
+| 12–13 | `imu_wr_idx`  (uint10, big-endian)                                        |
+| 14–15 | `imu_overflow` (uint16, big-endian)                                       |
 
 ---
 

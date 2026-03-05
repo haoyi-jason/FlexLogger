@@ -171,24 +171,28 @@ module psram_cmd_exec (
                 ST_DECODE: begin
                     case (opcode)
                         OP_STATUS: begin
-                            // 16 bytes: adc_pending(2) adc_rd(2) adc_wr(2) adc_ovf(2)
-                            //           imu_pending(2) imu_rd(2) imu_wr(2) imu_ovf(2)
-                            //           + init_calib(1) pad(1)
-                            resp_buf[0]  <= adc_pending[10:8] == 0 ?
-                                              adc_pending[7:0] : 8'hFF; // clamp
+                            // 16 bytes:
+                            //   [0-1]  adc_pending (uint11, big-endian 2 bytes)
+                            //   [2-3]  adc_rd_idx
+                            //   [4-5]  adc_wr_idx
+                            //   [6-7]  adc_overflow
+                            //   [8-9]  imu_pending
+                            //   [10-11] imu_rd_idx
+                            //   [12-13] imu_wr_idx
+                            //   [14-15] imu_overflow
+                            resp_buf[0]  <= {5'b0, adc_pending[10:8]};
                             resp_buf[1]  <= adc_pending[7:0];
-                            resp_buf[2]  <= adc_rd_idx[9:8];
+                            resp_buf[2]  <= {6'b0, adc_rd_idx[9:8]};
                             resp_buf[3]  <= adc_rd_idx[7:0];
-                            resp_buf[4]  <= adc_wr_idx[9:8];
+                            resp_buf[4]  <= {6'b0, adc_wr_idx[9:8]};
                             resp_buf[5]  <= adc_wr_idx[7:0];
                             resp_buf[6]  <= adc_overflow[15:8];
                             resp_buf[7]  <= adc_overflow[7:0];
-                            resp_buf[8]  <= imu_pending[10:8] == 0 ?
-                                              imu_pending[7:0] : 8'hFF;
+                            resp_buf[8]  <= {5'b0, imu_pending[10:8]};
                             resp_buf[9]  <= imu_pending[7:0];
-                            resp_buf[10] <= imu_rd_idx[9:8];
+                            resp_buf[10] <= {6'b0, imu_rd_idx[9:8]};
                             resp_buf[11] <= imu_rd_idx[7:0];
-                            resp_buf[12] <= imu_wr_idx[9:8];
+                            resp_buf[12] <= {6'b0, imu_wr_idx[9:8]};
                             resp_buf[13] <= imu_wr_idx[7:0];
                             resp_buf[14] <= imu_overflow[15:8];
                             resp_buf[15] <= imu_overflow[7:0];
@@ -240,9 +244,10 @@ module psram_cmd_exec (
                         OP_PSRAM_WRITE: begin
                             raw_addr    <= {payload[55:48][4:0], payload[47:40],
                                             payload[39:32]};
+                            // Upper 32 bits from payload bytes 3-6; lower 32 bits zeroed
                             raw_wr_data <= {payload[31:24], payload[23:16],
                                             payload[15: 8], payload[ 7: 0],
-                                            32'd0};  // top 32 bits from cmd
+                                            32'd0};
                             raw_mask    <= 8'h00;
                             raw_cmd_wr  <= 1'b1;
                             state       <= ST_RAW_WR;

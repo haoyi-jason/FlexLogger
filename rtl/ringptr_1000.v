@@ -27,7 +27,7 @@ module ringptr_1000 (
     output reg  [15:0] overflow     // cumulative overwrite count
 );
 
-    localparam DEPTH = 10'd999;     // max index (depth-1)
+    localparam MAX_IDX = 10'd999;   // maximum valid index (depth=1000, indices 0..999)
 
     wire full  = (pending == 11'd1000);
     wire empty = (pending == 11'd0);
@@ -41,10 +41,10 @@ module ringptr_1000 (
         end else begin
             case ({push, pop})
                 2'b10: begin // push only
-                    wr_idx  <= (wr_idx == DEPTH) ? 10'd0 : wr_idx + 1'b1;
+                    wr_idx  <= (wr_idx == MAX_IDX) ? 10'd0 : wr_idx + 1'b1;
                     if (full) begin
                         // Overwrite oldest: advance rd_idx as well
-                        rd_idx   <= (rd_idx == DEPTH) ? 10'd0 : rd_idx + 1'b1;
+                        rd_idx   <= (rd_idx == MAX_IDX) ? 10'd0 : rd_idx + 1'b1;
                         overflow <= (overflow == 16'hFFFF) ? overflow : overflow + 1'b1;
                     end else begin
                         pending <= pending + 1'b1;
@@ -52,14 +52,14 @@ module ringptr_1000 (
                 end
                 2'b01: begin // pop only
                     if (!empty) begin
-                        rd_idx  <= (rd_idx == DEPTH) ? 10'd0 : rd_idx + 1'b1;
+                        rd_idx  <= (rd_idx == MAX_IDX) ? 10'd0 : rd_idx + 1'b1;
                         pending <= pending - 1'b1;
                     end
                 end
                 2'b11: begin // push + pop simultaneously
-                    wr_idx <= (wr_idx == DEPTH) ? 10'd0 : wr_idx + 1'b1;
+                    wr_idx <= (wr_idx == MAX_IDX) ? 10'd0 : wr_idx + 1'b1;
                     if (!empty)
-                        rd_idx <= (rd_idx == DEPTH) ? 10'd0 : rd_idx + 1'b1;
+                        rd_idx <= (rd_idx == MAX_IDX) ? 10'd0 : rd_idx + 1'b1;
                     else
                         pending <= pending + 1'b1; // was empty, pop has no effect
                 end

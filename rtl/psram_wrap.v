@@ -93,7 +93,7 @@ module psram_wrap #(
                 ST_IDLE: begin
                     if (req && init_calib) begin
                         ip_cmd       <= cmd_wr ? CMD_WRITE[0] : ~CMD_WRITE[0];
-                        ip_addr      <= ADDR_IS_WORD ? addr : {addr[17:0], 3'b000};
+                        ip_addr      <= ADDR_IS_WORD ? addr : {addr[20:0]};
                         ip_wr_data   <= wr_data;
                         ip_data_mask <= data_mask;
                         ip_cmd_en    <= 1'b1;

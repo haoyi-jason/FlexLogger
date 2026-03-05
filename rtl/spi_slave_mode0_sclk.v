@@ -70,11 +70,12 @@ module spi_slave_mode0_sclk #(
             spi_miso <= MSB_FIRST ? tx_byte[7] : tx_byte[0];
         end else begin
             if (MSB_FIRST) begin
-                spi_miso <= shift_tx[6];
+                // Shift first, then present next bit on MISO
                 shift_tx <= {shift_tx[6:0], 1'b0};
+                spi_miso <= shift_tx[6];
             end else begin
-                spi_miso <= shift_tx[1];
                 shift_tx <= {1'b0, shift_tx[7:1]};
+                spi_miso <= shift_tx[1];
             end
         end
     end
