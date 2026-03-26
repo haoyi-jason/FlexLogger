@@ -202,19 +202,19 @@ module psram_cmd_exec (
                         end
 
                         OP_WRITE_REG: begin
-                            reg_wr_addr <= payload[55:48][2:0];
+                            reg_wr_addr <= payload[50:48];
                             reg_wr_data <= {payload[47:40], payload[39:32]};
                             reg_wr_en   <= 1'b1;
                             state       <= ST_IDLE;
                         end
 
                         OP_READ_REG: begin
-                            reg_rd_addr <= payload[55:48][2:0];
+                            reg_rd_addr <= payload[50:48];
                             state       <= ST_READ_REG;
                         end
 
                         OP_READ_ADC_FRAME: begin
-                            fetch_idx    <= {payload[55:48][1:0], payload[47:40]};
+                            fetch_idx    <= {payload[49:48], payload[47:40]};
                             fetch_is_imu <= 1'b0;
                             is_imu_cmd   <= 1'b0;
                             fetch_req    <= 1'b1;
@@ -222,7 +222,7 @@ module psram_cmd_exec (
                         end
 
                         OP_READ_IMU_FRAME: begin
-                            fetch_idx    <= {payload[55:48][1:0], payload[47:40]};
+                            fetch_idx    <= {payload[49:48], payload[47:40]};
                             fetch_is_imu <= 1'b1;
                             is_imu_cmd   <= 1'b1;
                             fetch_req    <= 1'b1;
@@ -242,7 +242,7 @@ module psram_cmd_exec (
                         end
 
                         OP_PSRAM_WRITE: begin
-                            raw_addr    <= {payload[55:48][4:0], payload[47:40],
+                            raw_addr    <= {payload[52:48], payload[47:40],
                                             payload[39:32]};
                             // Upper 32 bits from payload bytes 3-6; lower 32 bits zeroed
                             raw_wr_data <= {payload[31:24], payload[23:16],
@@ -254,7 +254,7 @@ module psram_cmd_exec (
                         end
 
                         OP_PSRAM_READ: begin
-                            raw_addr   <= {payload[55:48][4:0], payload[47:40],
+                            raw_addr   <= {payload[52:48], payload[47:40],
                                            payload[39:32]};
                             raw_cmd_wr <= 1'b0;
                             state      <= ST_RAW_RD;

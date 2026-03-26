@@ -106,13 +106,22 @@ module top (
     // =========================================================================
     wire memory_clk, memory_clk_p;
 
-    // TODO: Replace with actual Gowin rPLL IP (generated via EDA GUI).
-    // The rPLL should output:
-    //   CLKOUT  → memory_clk  (e.g. 166.667 MHz for DDR-333 operation)
-    //   CLKOUTP → memory_clk_p (phase offset by ~90°)
-    //   LOCK    → pll_lock
-    // Placeholder simulation model:
+    // Gowin rPLL instantiation for synthesis.
+    // The Gowin EDA GUI generates the Gowin_rPLL module; for simulation the
+    // stub in rtl/gowin_rpll_stub.v is used instead.
+    // Configuration: clkin=50 MHz → CLKOUT=166.667 MHz (FBDIV=10, IDIV=3),
+    //                CLKOUTP = CLKOUT with ~90° phase shift.
+    Gowin_rPLL u_pll (
+        .clkin  (clk50),
+        .clkout (memory_clk),
+        .clkoutp(memory_clk_p),
+        .lock   (pll_lock)
+    );
+
     // synthesis translate_off
+    // Simulation overrides: forward clk50 directly so the design runs without
+    // the proprietary rPLL IP.  The Gowin_rPLL stub (gowin_rpll_stub.v)
+    // drives the same values, making both sources consistent.
     assign memory_clk   = clk50;
     assign memory_clk_p = clk50;
     assign pll_lock     = 1'b1;
@@ -157,15 +166,13 @@ module top (
         .rd_data        (psram_rd_data_w),
         .rd_valid       (psram_rd_valid_w),
         .busy           (psram_busy_w),
-        .init_calib     (init_calib)
+        .init_calib     (init_calib),
+        .clk_out        (clk_out_psram)
     );
 
-    // Expose clk_out from IP through assign
-    // (psram_wrap's u_psram_ip.clk_out is left unconnected internally;
-    //  the top-level uses a direct connection)
-    // NOTE: In real Gowin synthesis, clk_out is a dedicated global clock.
-    // Wire it directly in the constraints / netlist.
-    // For simulation, use the placeholder assignment above.
+    // NOTE: In Gowin synthesis, clk_out is a dedicated global clock routed
+    // through the PSRAM IP.  psram_wrap exposes it as an output port and
+    // it is assigned to psram_clk above.
 
     // =========================================================================
     // ADC sample rate generator (10 kSPS at clk50)
@@ -420,6 +427,10 @@ module top (
     // Override c2_addr to include buffer-specific base address
     wire [20:0] c2_addr_offset = c2_addr + fetch_base;
 
+    // Named wires for arbiter output ports that are not used further up
+    wire [63:0] arb_rd_data_nc;
+    wire        arb_rd_valid_nc;
+
     psram_arbiter u_arb (
         .clk          (psram_clk),
         .rst_n        (rst_psram_n),
@@ -459,8 +470,8 @@ module top (
         .psram_rd_data(psram_rd_data_w),
         .psram_rd_valid(psram_rd_valid_w),
         .psram_busy   (psram_busy_w),
-        .rd_data      (),
-        .rd_valid     ()
+        .rd_data      (arb_rd_data_nc),
+        .rd_valid     (arb_rd_valid_nc)
     );
 
     // =========================================================================
@@ -515,6 +526,13 @@ module top (
     // =========================================================================
     // PSRAM command executor
     // =========================================================================
+    // Named wires for raw PSRAM bring-up outputs (not connected to arbiter)
+    wire        raw_req_nc;
+    wire        raw_cmd_wr_nc;
+    wire [20:0] raw_addr_nc;
+    wire [63:0] raw_wr_data_nc;
+    wire [7:0]  raw_mask_nc;
+
     psram_cmd_exec u_cmd_exec (
         .clk           (psram_clk),
         .rst_n         (rst_psram_n),
@@ -550,12 +568,12 @@ module top (
         .fetch_word0   (fetch_word0),
         .fetch_word1   (fetch_word1),
         .fetch_valid   (fetch_valid),
-        // Raw PSRAM (bring-up) – not arbitrated; tied off for now
-        .raw_req       (),
-        .raw_cmd_wr    (),
-        .raw_addr      (),
-        .raw_wr_data   (),
-        .raw_mask      (),
+        // Raw PSRAM (bring-up) – outputs captured in named wires; inputs tied off
+        .raw_req       (raw_req_nc),
+        .raw_cmd_wr    (raw_cmd_wr_nc),
+        .raw_addr      (raw_addr_nc),
+        .raw_wr_data   (raw_wr_data_nc),
+        .raw_mask      (raw_mask_nc),
         .raw_rd_data   (64'd0),
         .raw_rd_valid  (1'b0),
         .raw_busy      (1'b0),
