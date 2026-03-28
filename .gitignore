@@ -1,0 +1,4 @@
+# Build/sim artifacts
+sim/sim_top
+tb_top.vcd
+*.vcd

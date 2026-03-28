@@ -47,7 +47,8 @@ module psram_wrap #(
     output reg  [63:0] rd_data,
     output reg         rd_valid,
     output wire        busy,
-    output wire        init_calib
+    output wire        init_calib,
+    output wire        clk_out
 );
 
     // -----------------------------------------------------------------------
@@ -147,7 +148,7 @@ module psram_wrap #(
         .cmd            (ip_cmd),
         .cmd_en         (ip_cmd_en),
         .init_calib     (init_calib),
-        .clk_out        (),             // connected externally via clk_d
+        .clk_out        (clk_out),
         .data_mask      (ip_data_mask)
     );
 
